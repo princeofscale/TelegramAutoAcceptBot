@@ -1,0 +1,150 @@
+# English translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-08-26 13:22+0400\n"
+"PO-Revision-Date: 2026-08-26 13:22+0400\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: bot.py:66
+msgid "➕ Connect a channel"
+msgstr "➕ Connect a channel"
+
+#: bot.py:72
+msgid "🔴 Turn auto-approve OFF"
+msgstr "🔴 Turn auto-approve OFF"
+
+#: bot.py:72
+msgid "🟢 Turn auto-approve ON"
+msgstr "🟢 Turn auto-approve ON"
+
+#: bot.py:79
+#, python-brace-format
+msgid "📊 Stats, {days} days"
+msgstr "📊 Stats, {days} days"
+
+#: bot.py:85 bot.py:168
+msgid "⬅️ Back"
+msgstr "⬅️ Back"
+
+#: bot.py:108
+msgid "Requests"
+msgstr "Requests"
+
+#: bot.py:109
+msgid "Approved"
+msgstr "Approved"
+
+#: bot.py:110
+msgid "Left"
+msgstr "Left"
+
+#: bot.py:112
+msgid "Premium"
+msgstr "Premium"
+
+#: bot.py:113
+msgid "New accts"
+msgstr "New accts"
+
+#: bot.py:117
+msgid "By invite link:"
+msgstr "By invite link:"
+
+#: bot.py:128
+#, python-brace-format
+msgid "📊 {title} · {days} days"
+msgstr "📊 {title} · {days} days"
+
+#: bot.py:139
+msgid ""
+"👋 I approve join requests to your private channel automatically.\n"
+"\n"
+"To connect a channel, add me as an administrator with the <b>Add members</b> right. Only the "
+"channel owner can do this."
+msgstr ""
+"👋 I approve join requests to your private channel automatically.\n"
+"\n"
+"To connect a channel, add me as an administrator with the <b>Add members</b> right. Only the "
+"channel owner can do this."
+
+#: bot.py:150
+msgid "Your channels:"
+msgstr "Your channels:"
+
+#: bot.py:159
+msgid ""
+"<b>How to connect a channel</b>\n"
+"\n"
+"1. Open your channel → Administrators → Add admin\n"
+"2. Pick me and leave the <b>Add members</b> right enabled\n"
+"3. Come back here — the channel will show up in the list\n"
+"\n"
+"⚠️ Only the channel <b>owner</b> can connect it. An administrator is not enough.\n"
+"\n"
+"⚠️ Join requests that are already pending stay pending: Telegram gives bots no way to read them. "
+"Approve those once by hand — everything after that is on me."
+msgstr ""
+"<b>How to connect a channel</b>\n"
+"\n"
+"1. Open your channel → Administrators → Add admin\n"
+"2. Pick me and leave the <b>Add members</b> right enabled\n"
+"3. Come back here — the channel will show up in the list\n"
+"\n"
+"⚠️ Only the channel <b>owner</b> can connect it. An administrator is not enough.\n"
+"\n"
+"⚠️ Join requests that are already pending stay pending: Telegram gives bots no way to read them. "
+"Approve those once by hand — everything after that is on me."
+
+#: bot.py:185 bot.py:199 bot.py:221
+msgid "Channel not found."
+msgstr "Channel not found."
+
+#: bot.py:208
+msgid "Auto-approve is ON. Stats start collecting from now."
+msgstr "Auto-approve is ON. Stats start collecting from now."
+
+#: bot.py:210
+msgid "Auto-approve is OFF. Requests are no longer approved or counted."
+msgstr "Auto-approve is OFF. Requests are no longer approved or counted."
+
+#: bot.py:245
+#, python-brace-format
+msgid "⚠️ I was removed from «{title}» and stopped approving requests."
+msgstr "⚠️ I was removed from «{title}» and stopped approving requests."
+
+#: bot.py:267
+#, python-brace-format
+msgid ""
+"❌ Only the <b>owner</b> of «{title}» can connect it — being an administrator is not enough. I "
+"have left the channel; ask the owner to add me."
+msgstr ""
+"❌ Only the <b>owner</b> of «{title}» can connect it — being an administrator is not enough. I "
+"have left the channel; ask the owner to add me."
+
+#: bot.py:287
+#, python-brace-format
+msgid ""
+"⚠️ «{title}» is connected, but I have no <b>Add members</b> right — without it Telegram does not "
+"even send me the join requests. Grant it in the channel's admin settings."
+msgstr ""
+"⚠️ «{title}» is connected, but I have no <b>Add members</b> right — without it Telegram does not "
+"even send me the join requests. Grant it in the channel's admin settings."
+
+#: bot.py:297
+#, python-brace-format
+msgid "✅ «{title}» is connected. Send /start and switch auto-approve on."
+msgstr "✅ «{title}» is connected. Send /start and switch auto-approve on."
+

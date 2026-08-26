@@ -1,0 +1,135 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-08-26 13:22+0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: bot.py:66
+msgid "➕ Connect a channel"
+msgstr ""
+
+#: bot.py:72
+msgid "🔴 Turn auto-approve OFF"
+msgstr ""
+
+#: bot.py:72
+msgid "🟢 Turn auto-approve ON"
+msgstr ""
+
+#: bot.py:79
+#, python-brace-format
+msgid "📊 Stats, {days} days"
+msgstr ""
+
+#: bot.py:85 bot.py:168
+msgid "⬅️ Back"
+msgstr ""
+
+#: bot.py:108
+msgid "Requests"
+msgstr ""
+
+#: bot.py:109
+msgid "Approved"
+msgstr ""
+
+#: bot.py:110
+msgid "Left"
+msgstr ""
+
+#: bot.py:112
+msgid "Premium"
+msgstr ""
+
+#: bot.py:113
+msgid "New accts"
+msgstr ""
+
+#: bot.py:117
+msgid "By invite link:"
+msgstr ""
+
+#: bot.py:128
+#, python-brace-format
+msgid "📊 {title} · {days} days"
+msgstr ""
+
+#: bot.py:139
+msgid ""
+"👋 I approve join requests to your private channel automatically.\n"
+"\n"
+"To connect a channel, add me as an administrator with the <b>Add "
+"members</b> right. Only the channel owner can do this."
+msgstr ""
+
+#: bot.py:150
+msgid "Your channels:"
+msgstr ""
+
+#: bot.py:159
+msgid ""
+"<b>How to connect a channel</b>\n"
+"\n"
+"1. Open your channel → Administrators → Add admin\n"
+"2. Pick me and leave the <b>Add members</b> right enabled\n"
+"3. Come back here — the channel will show up in the list\n"
+"\n"
+"⚠️ Only the channel <b>owner</b> can connect it. An administrator is not "
+"enough.\n"
+"\n"
+"⚠️ Join requests that are already pending stay pending: Telegram gives "
+"bots no way to read them. Approve those once by hand — everything after "
+"that is on me."
+msgstr ""
+
+#: bot.py:185 bot.py:199 bot.py:221
+msgid "Channel not found."
+msgstr ""
+
+#: bot.py:208
+msgid "Auto-approve is ON. Stats start collecting from now."
+msgstr ""
+
+#: bot.py:210
+msgid "Auto-approve is OFF. Requests are no longer approved or counted."
+msgstr ""
+
+#: bot.py:245
+#, python-brace-format
+msgid "⚠️ I was removed from «{title}» and stopped approving requests."
+msgstr ""
+
+#: bot.py:267
+#, python-brace-format
+msgid ""
+"❌ Only the <b>owner</b> of «{title}» can connect it — being an "
+"administrator is not enough. I have left the channel; ask the owner to "
+"add me."
+msgstr ""
+
+#: bot.py:287
+#, python-brace-format
+msgid ""
+"⚠️ «{title}» is connected, but I have no <b>Add members</b> right — "
+"without it Telegram does not even send me the join requests. Grant it in "
+"the channel's admin settings."
+msgstr ""
+
+#: bot.py:297
+#, python-brace-format
+msgid "✅ «{title}» is connected. Send /start and switch auto-approve on."
+msgstr ""
+
