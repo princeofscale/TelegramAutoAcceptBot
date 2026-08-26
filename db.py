@@ -51,6 +51,17 @@ CREATE TABLE IF NOT EXISTS join_events (
 );
 CREATE INDEX IF NOT EXISTS idx_join_chat_ts ON join_events(chat_id, ts);
 
+-- Telegram переприсылает необработанный апдейт до суток: если бот перезапустился
+-- между approve и записью, заявка придёт снова. Ключ (канал, заявитель, время
+-- подачи) делает повтор безвредным. Дедуп перед индексом — для баз, заведённых
+-- до его появления.
+-- ponytail: дедуп сканирует таблицу на каждом старте, при сотнях тысяч заявок
+-- вынести в разовую миграцию по user_version.
+DELETE FROM join_events WHERE id NOT IN (
+    SELECT MIN(id) FROM join_events GROUP BY chat_id, user_hash, ts
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_join_once ON join_events(chat_id, user_hash, ts);
+
 CREATE TABLE IF NOT EXISTS leave_events (
     id        INTEGER PRIMARY KEY,
     chat_id   INTEGER NOT NULL,
@@ -68,6 +79,7 @@ async def connect(path: str | None = None) -> None:
     _db = await aiosqlite.connect(path or config.DB_PATH)
     _db.row_factory = aiosqlite.Row
     await _db.execute("PRAGMA journal_mode=WAL")
+    await _db.execute("PRAGMA busy_timeout=5000")
     await _db.executescript(_SCHEMA)
     # ponytail: миграции через user_version. Пока версия одна, ветвление
     # добавляем в тот день, когда появится вторая.
@@ -198,9 +210,10 @@ async def record_join(
     lang: str | None,
     is_premium: bool,
     approved: bool,
+    ts: int | None = None,
 ) -> None:
     await _db.execute(
-        """INSERT INTO join_events
+        """INSERT OR IGNORE INTO join_events
                (chat_id, user_hash, link_url, link_name, lang, is_premium, acct_year, approved, ts)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
@@ -212,7 +225,7 @@ async def record_join(
             int(is_premium),
             account_year(user_id),
             int(approved),
-            int(time.time()),
+            ts if ts is not None else int(time.time()),
         ),
     )
     await _db.commit()
@@ -252,17 +265,32 @@ async def stats(chat_id: int, days: int) -> dict:
         totals = dict(await cur.fetchone())
 
     async with _db.execute(
-        """SELECT COALESCE(j.link_name, j.link_url, '?') AS label,
+        """WITH j AS (
+               SELECT *,
+                      COALESCE(
+                          NULLIF(link_name, ''),
+                          -- Ссылку, созданную не ботом, Telegram отдаёт
+                          -- обрезанной (t.me/+…) — такие URL неразличимы,
+                          -- группировать по ним нельзя.
+                          CASE WHEN link_url LIKE '%…%' THEN NULL ELSE link_url END,
+                          '?'
+                      ) AS label
+                 FROM join_events
+                WHERE chat_id = ? AND ts >= ? AND approved = 1
+           )
+           SELECT label,
                   COUNT(*) AS joined,
                   SUM(EXISTS(SELECT 1 FROM leave_events l
                               WHERE l.chat_id = j.chat_id
                                 AND l.user_hash = j.user_hash
-                                AND l.ts >= j.ts)) AS gone
-             FROM join_events j
-            WHERE j.chat_id = ? AND j.ts >= ? AND j.approved = 1
-         GROUP BY COALESCE(j.link_url, '?')
-         ORDER BY joined DESC""",
-        (chat_id, since),
+                                AND l.ts >= j.ts)) AS gone,
+                  SUM(CASE WHEN acct_year >= ? THEN 1 ELSE 0 END) AS fresh
+             FROM j
+         GROUP BY label
+         -- Решение «крутить ссылку дальше» принимается по доле оставшихся,
+         -- объём выигрывает накрутка.
+         ORDER BY (joined - gone) * 1.0 / joined DESC, joined DESC""",
+        (chat_id, since, fresh_from),
     ) as cur:
         links = [dict(row) for row in await cur.fetchall()]
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-26 13:22+0400\n"
+"POT-Creation-Date: 2026-08-26 18:44+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,57 +17,66 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bot.py:66
+#: bot.py:74
 msgid "➕ Connect a channel"
 msgstr ""
 
-#: bot.py:72
+#: bot.py:80
 msgid "🔴 Turn auto-approve OFF"
 msgstr ""
 
-#: bot.py:72
+#: bot.py:80
 msgid "🟢 Turn auto-approve ON"
 msgstr ""
 
-#: bot.py:79
+#: bot.py:87
 #, python-brace-format
 msgid "📊 Stats, {days} days"
 msgstr ""
 
-#: bot.py:85 bot.py:168
+#: bot.py:93 bot.py:199
 msgid "⬅️ Back"
 msgstr ""
 
-#: bot.py:108
+#: bot.py:138 test_db.py:89 test_db.py:91
 msgid "Requests"
 msgstr ""
 
-#: bot.py:109
+#: bot.py:139
 msgid "Approved"
 msgstr ""
 
-#: bot.py:110
+#: bot.py:140
 msgid "Left"
 msgstr ""
 
-#: bot.py:112
+#: bot.py:142
 msgid "Premium"
 msgstr ""
 
-#: bot.py:113
+#: bot.py:143
 msgid "New accts"
 msgstr ""
 
-#: bot.py:117
+#: bot.py:147
 msgid "By invite link:"
 msgstr ""
 
-#: bot.py:128
+#: bot.py:147
+msgid "  link        req → stay   ret   new"
+msgstr ""
+
+#: bot.py:158
+#, python-brace-format
+msgid "  …and {n} more"
+msgstr ""
+
+#: bot.py:161
 #, python-brace-format
 msgid "📊 {title} · {days} days"
 msgstr ""
 
-#: bot.py:139
+#: bot.py:172
 msgid ""
 "👋 I approve join requests to your private channel automatically.\n"
 "\n"
@@ -75,11 +84,11 @@ msgid ""
 "members</b> right. Only the channel owner can do this."
 msgstr ""
 
-#: bot.py:150
+#: bot.py:182
 msgid "Your channels:"
 msgstr ""
 
-#: bot.py:159
+#: bot.py:190
 msgid ""
 "<b>How to connect a channel</b>\n"
 "\n"
@@ -95,24 +104,26 @@ msgid ""
 "that is on me."
 msgstr ""
 
-#: bot.py:185 bot.py:199 bot.py:221
+#: bot.py:215 bot.py:229 bot.py:251
 msgid "Channel not found."
 msgstr ""
 
-#: bot.py:208
-msgid "Auto-approve is ON. Stats start collecting from now."
+#: bot.py:238
+msgid "Auto-approve is ON. Requests are approved and counted from now."
 msgstr ""
 
-#: bot.py:210
-msgid "Auto-approve is OFF. Requests are no longer approved or counted."
+#: bot.py:240
+msgid "Auto-approve is OFF. New requests are not approved."
 msgstr ""
 
-#: bot.py:245
+#: bot.py:276
 #, python-brace-format
-msgid "⚠️ I was removed from «{title}» and stopped approving requests."
+msgid ""
+"⚠️ I lost administrator rights in «{title}» and stopped approving "
+"requests. Add me back as an admin to resume."
 msgstr ""
 
-#: bot.py:267
+#: bot.py:295
 #, python-brace-format
 msgid ""
 "❌ Only the <b>owner</b> of «{title}» can connect it — being an "
@@ -120,7 +131,7 @@ msgid ""
 "add me."
 msgstr ""
 
-#: bot.py:287
+#: bot.py:316
 #, python-brace-format
 msgid ""
 "⚠️ «{title}» is connected, but I have no <b>Add members</b> right — "
@@ -128,8 +139,13 @@ msgid ""
 "the channel's admin settings."
 msgstr ""
 
-#: bot.py:297
+#: bot.py:331
 #, python-brace-format
-msgid "✅ «{title}» is connected. Send /start and switch auto-approve on."
+msgid "✅ «{title}» is connected. Turn auto-approve on:"
+msgstr ""
+
+#: bot.py:384
+#, python-brace-format
+msgid "⚠️ I can no longer access «{title}» and stopped approving requests."
 msgstr ""
 

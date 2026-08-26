@@ -7,85 +7,94 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-26 13:22+0400\n"
+"POT-Creation-Date: 2026-08-26 18:44+0400\n"
 "PO-Revision-Date: 2026-08-26 13:22+0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
 "Language-Team: ru <LL@li.org>\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || "
-"n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && "
+"(n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bot.py:66
+#: bot.py:74
 msgid "➕ Connect a channel"
 msgstr "➕ Подключить канал"
 
-#: bot.py:72
+#: bot.py:80
 msgid "🔴 Turn auto-approve OFF"
 msgstr "🔴 Выключить автоприём"
 
-#: bot.py:72
+#: bot.py:80
 msgid "🟢 Turn auto-approve ON"
 msgstr "🟢 Включить автоприём"
 
-#: bot.py:79
+#: bot.py:87
 #, python-brace-format
 msgid "📊 Stats, {days} days"
 msgstr "📊 Статистика, {days} дн."
 
-#: bot.py:85 bot.py:168
+#: bot.py:93 bot.py:199
 msgid "⬅️ Back"
 msgstr "⬅️ Назад"
 
-#: bot.py:108
+#: bot.py:138 test_db.py:89 test_db.py:91
 msgid "Requests"
 msgstr "Заявок"
 
-#: bot.py:109
+#: bot.py:139
 msgid "Approved"
 msgstr "Принято"
 
-#: bot.py:110
+#: bot.py:140
 msgid "Left"
 msgstr "Отписалось"
 
-#: bot.py:112
+#: bot.py:142
 msgid "Premium"
 msgstr "Premium"
 
-#: bot.py:113
+#: bot.py:143
 msgid "New accts"
 msgstr "Свежих"
 
-#: bot.py:117
+#: bot.py:147
 msgid "By invite link:"
 msgstr "По ссылкам:"
 
-#: bot.py:128
+#: bot.py:147
+msgid "  link        req → stay   ret   new"
+msgstr "  ссылка      заяв → оста   ост  новых"
+
+#: bot.py:158
+#, python-brace-format
+msgid "  …and {n} more"
+msgstr "  …и ещё {n}"
+
+#: bot.py:161
 #, python-brace-format
 msgid "📊 {title} · {days} days"
 msgstr "📊 {title} · {days} дн."
 
-#: bot.py:139
+#: bot.py:172
 msgid ""
 "👋 I approve join requests to your private channel automatically.\n"
 "\n"
-"To connect a channel, add me as an administrator with the <b>Add members</b> right. Only the "
-"channel owner can do this."
+"To connect a channel, add me as an administrator with the <b>Add members</b> right. "
+"Only the channel owner can do this."
 msgstr ""
 "👋 Я автоматически принимаю заявки на вступление в твой приватный канал.\n"
 "\n"
-"Чтобы подключить канал, добавь меня администратором с правом <b>Добавление подписчиков</b>. "
-"Сделать это может только владелец канала."
+"Чтобы подключить канал, добавь меня администратором с правом <b>Добавление "
+"подписчиков</b>. Сделать это может только владелец канала."
 
-#: bot.py:150
+#: bot.py:182
 msgid "Your channels:"
 msgstr "Твои каналы:"
 
-#: bot.py:159
+#: bot.py:190
 msgid ""
 "<b>How to connect a channel</b>\n"
 "\n"
@@ -95,8 +104,8 @@ msgid ""
 "\n"
 "⚠️ Only the channel <b>owner</b> can connect it. An administrator is not enough.\n"
 "\n"
-"⚠️ Join requests that are already pending stay pending: Telegram gives bots no way to read them. "
-"Approve those once by hand — everything after that is on me."
+"⚠️ Join requests that are already pending stay pending: Telegram gives bots no way to"
+" read them. Approve those once by hand — everything after that is on me."
 msgstr ""
 "<b>Как подключить канал</b>\n"
 "\n"
@@ -106,46 +115,60 @@ msgstr ""
 "\n"
 "⚠️ Подключить канал может только его <b>владелец</b>. Администратора недостаточно.\n"
 "\n"
-"⚠️ Заявки, которые уже висят, так и останутся висеть: Telegram не даёт ботам способа их "
-"прочитать. Одобри их один раз руками — всё, что придёт дальше, за мной."
+"⚠️ Заявки, которые уже висят, так и останутся висеть: Telegram не даёт ботам способа "
+"их прочитать. Одобри их один раз руками — всё, что придёт дальше, за мной."
 
-#: bot.py:185 bot.py:199 bot.py:221
+#: bot.py:215 bot.py:229 bot.py:251
 msgid "Channel not found."
 msgstr "Канал не найден."
 
-#: bot.py:208
-msgid "Auto-approve is ON. Stats start collecting from now."
-msgstr "Автоприём включён. Статистика начинает копиться с этой минуты."
+#: bot.py:238
+msgid "Auto-approve is ON. Requests are approved and counted from now."
+msgstr "Автоприём включён. Заявки принимаются и считаются с этой секунды."
 
-#: bot.py:210
-msgid "Auto-approve is OFF. Requests are no longer approved or counted."
-msgstr "Автоприём выключен. Заявки больше не принимаются и не считаются."
+#: bot.py:240
+msgid "Auto-approve is OFF. New requests are not approved."
+msgstr "Автоприём выключен. Новые заявки не принимаются."
 
-#: bot.py:245
-#, python-brace-format
-msgid "⚠️ I was removed from «{title}» and stopped approving requests."
-msgstr "⚠️ Меня удалили из «{title}», заявки больше не принимаются."
-
-#: bot.py:267
+#: bot.py:276
 #, python-brace-format
 msgid ""
-"❌ Only the <b>owner</b> of «{title}» can connect it — being an administrator is not enough. I "
-"have left the channel; ask the owner to add me."
+"⚠️ I lost administrator rights in «{title}» and stopped approving requests. Add me "
+"back as an admin to resume."
 msgstr ""
-"❌ Подключить «{title}» может только <b>владелец</b> канала — администратора недостаточно. Я вышел"
-" из канала; попроси владельца добавить меня."
+"⚠️ Меня лишили прав администратора в «{title}», заявки больше не принимаются. Верни "
+"права администратора, чтобы продолжить."
 
-#: bot.py:287
+#: bot.py:295
 #, python-brace-format
 msgid ""
-"⚠️ «{title}» is connected, but I have no <b>Add members</b> right — without it Telegram does not "
-"even send me the join requests. Grant it in the channel's admin settings."
+"❌ Only the <b>owner</b> of «{title}» can connect it — being an administrator is not "
+"enough. I have left the channel; ask the owner to add me."
 msgstr ""
-"⚠️ «{title}» подключён, но у меня нет права <b>Добавление подписчиков</b> — без него Telegram "
-"вообще не присылает мне заявки. Выдай его в настройках администратора канала."
+"❌ Подключить «{title}» может только <b>владелец</b> канала — администратора "
+"недостаточно. Я вышел из канала; попроси владельца добавить меня."
 
-#: bot.py:297
+#: bot.py:316
 #, python-brace-format
-msgid "✅ «{title}» is connected. Send /start and switch auto-approve on."
-msgstr "✅ «{title}» подключён. Напиши /start и включи автоприём."
+msgid ""
+"⚠️ «{title}» is connected, but I have no <b>Add members</b> right — without it "
+"Telegram does not even send me the join requests. Grant it in the channel's admin "
+"settings."
+msgstr ""
+"⚠️ «{title}» подключён, но у меня нет права <b>Добавление подписчиков</b> — без него "
+"Telegram вообще не присылает мне заявки. Выдай его в настройках администратора "
+"канала."
+
+#: bot.py:331
+#, python-brace-format
+msgid "✅ «{title}» is connected. Turn auto-approve on:"
+msgstr "✅ «{title}» подключён. Включай автоприём:"
+
+#: bot.py:384
+#, python-brace-format
+msgid "⚠️ I can no longer access «{title}» and stopped approving requests."
+msgstr "⚠️ У меня больше нет доступа к «{title}», заявки не принимаются."
+
+#~ msgid "Auto-approve is ON. Stats start collecting from now."
+#~ msgstr "Автоприём включён. Статистика начинает копиться с этой минуты."
 

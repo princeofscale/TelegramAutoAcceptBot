@@ -11,7 +11,12 @@ import logging
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ChatMemberStatus, ChatType, ParseMode
-from aiogram.exceptions import TelegramAPIError
+from aiogram.exceptions import (
+    TelegramAPIError,
+    TelegramBadRequest,
+    TelegramForbiddenError,
+    TelegramRetryAfter,
+)
 from aiogram.filters import CommandStart
 from aiogram.types import (
     CallbackQuery,
@@ -31,7 +36,10 @@ import db
 
 router = Router()
 
-STATS_PERIODS = (7, 30)
+STATS_PERIODS = (1, 7, 30)
+
+# Сколько строк отчёта влезает, не упираясь в лимит сообщения Telegram.
+MAX_LINK_ROWS = 10
 
 
 # --- i18n ----------------------------------------------------------------------
@@ -89,12 +97,34 @@ def channel_menu(chat_id: int, auto_approve: bool) -> InlineKeyboardMarkup:
 
 # --- вспомогательное -----------------------------------------------------------
 
-async def notify(bot: Bot, user_id: int, text: str) -> None:
+async def notify(bot: Bot, user_id: int, text: str, reply_markup=None) -> None:
     """Написать владельцу. Молча пропускаем, если он не запускал бота."""
     try:
-        await bot.send_message(user_id, text)
+        await bot.send_message(user_id, text, reply_markup=reply_markup)
     except TelegramAPIError as exc:
         logging.info("не доставлено %s: %s", user_id, exc)
+
+
+async def in_lang(user_id: int):
+    """Контекст локали получателя.
+
+    Локаль в мидлвари берётся от того, кто вызвал апдейт. Бота из канала может
+    убрать другой админ — алерт владельцу не должен приходить на языке этого админа.
+    """
+    lang = await db.get_lang(user_id) or config.DEFAULT_LOCALE
+    return I18n.get_current().use_locale(lang)
+
+
+async def show(call: CallbackQuery, text: str, reply_markup=None) -> None:
+    """edit_text, который не оставляет часики крутиться на кнопке."""
+    try:
+        await call.message.edit_text(text, reply_markup=reply_markup)
+    except TelegramBadRequest as exc:
+        # Повторное нажатие той же кнопки — не ошибка.
+        if "message is not modified" not in exc.message:
+            raise
+    finally:
+        await call.answer()
 
 
 def format_stats(title: str, report: dict) -> str:
@@ -114,15 +144,18 @@ def format_stats(title: str, report: dict) -> str:
     ]
 
     if links:
-        head += ["", _("By invite link:")]
-        for link in links:
+        head += ["", _("By invite link:"), _("  link        req → stay   ret   new")]
+        for link in links[:MAX_LINK_ROWS]:
             stayed = link["joined"] - link["gone"]
             label = link["label"]
-            label = label if len(label) <= 14 else label[:13] + "…"
+            label = label if len(label) <= 11 else label[:10] + "…"
             head.append(
-                f"  {label.ljust(15)}{str(link['joined']).rjust(4)} → "
-                f"{str(stayed).rjust(4)}  {pct(stayed, link['joined']).rjust(4)}"
+                f"  {label.ljust(12)}{str(link['joined']).rjust(3)} → "
+                f"{str(stayed).rjust(4)}  {pct(stayed, link['joined']).rjust(4)}  "
+                f"{pct(link['fresh'], link['joined']).rjust(4)}"
             )
+        if len(links) > MAX_LINK_ROWS:
+            head.append(_("  …and {n} more").format(n=len(links) - MAX_LINK_ROWS))
 
     body = html.escape("\n".join(head))
     header = _("📊 {title} · {days} days").format(title=html.escape(title), days=report["days"])
@@ -146,15 +179,13 @@ async def cmd_start(message: Message) -> None:
 
 @router.callback_query(F.data == "menu")
 async def cb_menu(call: CallbackQuery) -> None:
-    await call.message.edit_text(
-        _("Your channels:"), reply_markup=await main_menu(call.from_user.id)
-    )
-    await call.answer()
+    await show(call, _("Your channels:"), await main_menu(call.from_user.id))
 
 
 @router.callback_query(F.data == "how")
 async def cb_how(call: CallbackQuery) -> None:
-    await call.message.edit_text(
+    await show(
+        call,
         _(
             "<b>How to connect a channel</b>\n\n"
             "1. Open your channel → Administrators → Add admin\n"
@@ -168,7 +199,6 @@ async def cb_how(call: CallbackQuery) -> None:
             inline_keyboard=[[InlineKeyboardButton(text=_("⬅️ Back"), callback_data="menu")]]
         ),
     )
-    await call.answer()
 
 
 @router.callback_query(F.data == "lang")
@@ -184,11 +214,11 @@ async def cb_channel(call: CallbackQuery) -> None:
     if channel is None or channel["owner_id"] != call.from_user.id:
         await call.answer(_("Channel not found."), show_alert=True)
         return
-    await call.message.edit_text(
+    await show(
+        call,
         f"<b>{html.escape(channel['title'] or '?')}</b>",
-        reply_markup=channel_menu(chat_id, bool(channel["auto_approve"])),
+        channel_menu(chat_id, bool(channel["auto_approve"])),
     )
-    await call.answer()
 
 
 @router.callback_query(F.data.startswith("toggle:"))
@@ -203,11 +233,11 @@ async def cb_toggle(call: CallbackQuery) -> None:
     await db.set_auto_approve(chat_id, enabled)
     await call.message.edit_reply_markup(reply_markup=channel_menu(chat_id, enabled))
     await call.answer(
-        # Статистика пишется только при включённом тумблере, поэтому отчёт
-        # заполняется с этой секунды, а не задним числом.
-        _("Auto-approve is ON. Stats start collecting from now.")
+        # Заявки задним числом Telegram не отдаёт, поэтому отчёт наполняется
+        # с этой секунды. Отписки считаются в любом случае, пока канал подключён.
+        _("Auto-approve is ON. Requests are approved and counted from now.")
         if enabled
-        else _("Auto-approve is OFF. Requests are no longer approved or counted."),
+        else _("Auto-approve is OFF. New requests are not approved."),
         show_alert=True,
     )
 
@@ -222,11 +252,11 @@ async def cb_stats(call: CallbackQuery) -> None:
         return
 
     report = await db.stats(chat_id, days)
-    await call.message.edit_text(
+    await show(
+        call,
         format_stats(channel["title"] or "?", report),
-        reply_markup=channel_menu(chat_id, bool(channel["auto_approve"])),
+        channel_menu(chat_id, bool(channel["auto_approve"])),
     )
-    await call.answer()
 
 
 # --- канал ---------------------------------------------------------------------
@@ -236,19 +266,17 @@ async def on_my_status(event: ChatMemberUpdated, bot: Bot) -> None:
     status = event.new_chat_member.status
     actor = event.from_user
 
-    if status in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED):
+    # Разжалование до участника выглядит иначе, чем удаление, а последствия те же:
+    # Telegram перестаёт слать и заявки, и отписки. Канал надо гасить в обоих случаях.
+    if status != ChatMemberStatus.ADMINISTRATOR:
         owner_id = await db.deactivate_channel(event.chat.id)
         if owner_id:
-            await notify(
-                bot,
-                owner_id,
-                _("⚠️ I was removed from «{title}» and stopped approving requests.").format(
-                    title=html.escape(event.chat.title or "?")
-                ),
-            )
-        return
-
-    if status != ChatMemberStatus.ADMINISTRATOR:
+            with await in_lang(owner_id):
+                text = _(
+                    "⚠️ I lost administrator rights in «{title}» and stopped approving "
+                    "requests. Add me back as an admin to resume."
+                ).format(title=html.escape(event.chat.title or "?"))
+            await notify(bot, owner_id, text)
         return
 
     # Подключить канал может только владелец: у администратора нет полномочий
@@ -276,6 +304,7 @@ async def on_my_status(event: ChatMemberUpdated, bot: Bot) -> None:
             logging.warning("не смог выйти из %s: %s", event.chat.id, exc)
         return
 
+    known = await db.get_channel(event.chat.id)
     await db.ensure_user(actor.id, actor.language_code)
     await db.upsert_channel(event.chat.id, actor.id, event.chat.title)
 
@@ -291,13 +320,51 @@ async def on_my_status(event: ChatMemberUpdated, bot: Bot) -> None:
         )
         return
 
+    # Владелец правит галки админа — апдейт прилетает каждый раз. Поздравлять
+    # с подключением второй раз незачем.
+    if known is not None and known["active"]:
+        return
+
     await notify(
         bot,
         actor.id,
-        _("✅ «{title}» is connected. Send /start and switch auto-approve on.").format(
+        _("✅ «{title}» is connected. Turn auto-approve on:").format(
             title=html.escape(event.chat.title or "?")
         ),
+        reply_markup=channel_menu(event.chat.id, False),
     )
+
+
+# Заявка уже удовлетворена: апдейт пришёл повторно после рестарта или её принял
+# руками другой админ. Человек в канале — значит для статистики это «принято».
+_ALREADY_IN = ("USER_ALREADY_PARTICIPANT", "HIDE_REQUESTER_MISSING")
+_CHANNEL_GONE = ("chat not found", "bot is not a member", "CHAT_WRITE_FORBIDDEN")
+
+
+async def approve(bot: Bot, chat_id: int, user_id: int) -> bool | None:
+    """True — принято, False — не удалось, None — канал для бота недоступен."""
+    for _attempt in range(3):
+        try:
+            await bot.approve_chat_join_request(chat_id, user_id)
+            return True
+        except TelegramRetryAfter as exc:
+            # Под закупом заявки идут пачкой и Telegram отвечает 429. Без паузы
+            # и повтора заявка просто теряется: очередь ботам недоступна.
+            logging.info("429 на %s, ждём %s c", chat_id, exc.retry_after)
+            await asyncio.sleep(exc.retry_after)
+        except TelegramForbiddenError:
+            return None
+        except TelegramBadRequest as exc:
+            if any(marker in exc.message for marker in _ALREADY_IN):
+                return True
+            if any(marker in exc.message for marker in _CHANNEL_GONE):
+                return None
+            logging.warning("не принял заявку в %s: %s", chat_id, exc)
+            return False
+        except TelegramAPIError as exc:
+            logging.warning("не принял заявку в %s: %s", chat_id, exc)
+            return False
+    return False
 
 
 @router.chat_join_request()
@@ -307,12 +374,17 @@ async def on_join_request(event: ChatJoinRequest, bot: Bot) -> None:
         return
 
     user = event.from_user
-    try:
-        await bot.approve_chat_join_request(event.chat.id, user.id)
-        approved = True
-    except TelegramAPIError as exc:
-        logging.warning("не принял заявку %s в %s: %s", user.id, event.chat.id, exc)
-        approved = False
+    result = await approve(bot, event.chat.id, user.id)
+
+    if result is None:
+        owner_id = await db.deactivate_channel(event.chat.id)
+        if owner_id:
+            with await in_lang(owner_id):
+                text = _(
+                    "⚠️ I can no longer access «{title}» and stopped approving requests."
+                ).format(title=html.escape(event.chat.title or "?"))
+            await notify(bot, owner_id, text)
+        return
 
     link = event.invite_link
     await db.record_join(
@@ -322,7 +394,9 @@ async def on_join_request(event: ChatJoinRequest, bot: Bot) -> None:
         link.name if link else None,
         user.language_code,
         bool(user.is_premium),
-        approved,
+        result,
+        # Время подачи, а не обработки: по нему повторный апдейт узнаётся как тот же.
+        int(event.date.timestamp()),
     )
 
 
@@ -330,8 +404,10 @@ async def on_join_request(event: ChatJoinRequest, bot: Bot) -> None:
 async def on_member_left(event: ChatMemberUpdated) -> None:
     if event.new_chat_member.status not in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED):
         return
+    # Тумблер решает, принимать ли заявки, а не считать ли отписки: иначе за
+    # выключенную на ночь автоприёмку удержание нарисуется стопроцентным.
     channel = await db.get_channel(event.chat.id)
-    if channel is not None and channel["auto_approve"]:
+    if channel is not None and channel["active"]:
         await db.record_leave(event.chat.id, event.new_chat_member.user.id)
 
 

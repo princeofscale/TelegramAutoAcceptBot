@@ -28,7 +28,6 @@ python3 -m venv .venv
 .venv/bin/pybabel compile -d locales -D messages
 
 cp .env.example .env    # BOT_TOKEN от @BotFather, HASH_SALT сгенерировать
-set -a && . ./.env && set +a
 .venv/bin/python bot.py
 ```
 

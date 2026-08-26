@@ -62,6 +62,21 @@ async def main() -> None:
             # у «посева» в отчёт идёт только принятая заявка
             assert links["посев"]["joined"] == 1 and links["посев"]["gone"] == 0, links
 
+            # Ссылки, созданные не ботом, Telegram отдаёт обрезанными: разные
+            # связки различимы только по имени.
+            await db.record_join(CHAT, 401, "https://t.me/+…", "тизер", "ru", False, True)
+            await db.record_join(CHAT, 402, "https://t.me/+…", "баннер", "ru", False, True)
+            labels = {row["label"] for row in (await db.stats(CHAT, days=7))["links"]}
+            assert {"тизер", "баннер"} <= labels, f"обрезанные ссылки схлопнулись: {labels}"
+
+            # Повторно присланный апдейт той же заявки не задваивает вступление.
+            now = int(time.time())
+            before = (await db.stats(CHAT, days=7))["totals"]["requests"]
+            for _ in range(2):
+                await db.record_join(CHAT, 501, "t.me/+ccc", "повтор", "ru", False, True, now)
+            after = (await db.stats(CHAT, days=7))["totals"]["requests"]
+            assert after == before + 1, f"повтор апдейта посчитан дважды: {before} → {after}"
+
             # Уход, записанный ДО вступления, не считается отпиской этого вступления.
             await db._db.execute(
                 "INSERT INTO leave_events (chat_id, user_hash, ts) VALUES (?, ?, ?)",
@@ -73,7 +88,7 @@ async def main() -> None:
             # Удаление бота не стирает статистику
             assert await db.deactivate_channel(CHAT) == 1
             assert await db.channels_of(1) == []
-            assert (await db.stats(CHAT, days=7))["totals"]["requests"] == 5
+            assert (await db.stats(CHAT, days=7))["totals"]["requests"] == 8
 
         finally:
             await db.close()
