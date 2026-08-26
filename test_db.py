@@ -85,9 +85,10 @@ async def main() -> None:
             await db.record_join(CHAT, 202, "t.me/+bbb", "посев", "ru", False, True)
             assert (await db.stats(CHAT, days=7))["totals"]["gone"] == 1, "старый выход посчитан заново"
 
-            # Удаление бота не стирает статистику
+            # Удаление бота не стирает ни статистику, ни канал из списка:
+            # до отчёта за прошлое надо как-то добираться.
             assert await db.deactivate_channel(CHAT) == 1
-            assert await db.channels_of(1) == []
+            assert [c["active"] for c in await db.channels_of(1)] == [0]
             assert (await db.stats(CHAT, days=7))["totals"]["requests"] == 8
 
         finally:

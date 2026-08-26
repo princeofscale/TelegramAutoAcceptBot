@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-26 18:44+0400\n"
+"POT-Creation-Date: 2026-08-26 19:31+0400\n"
 "PO-Revision-Date: 2026-08-26 13:22+0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,88 +19,158 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bot.py:74
-msgid "➕ Connect a channel"
-msgstr "➕ Подключить канал"
+#: bot.py:71
+msgid "24 hours"
+msgstr "24 часа"
 
-#: bot.py:80
-msgid "🔴 Turn auto-approve OFF"
+#: bot.py:72
+msgid "7 days"
+msgstr "7 дней"
+
+#: bot.py:73
+msgid "30 days"
+msgstr "30 дней"
+
+#: bot.py:74
+msgid "all time"
+msgstr "всё время"
+
+#: bot.py:79
+msgid "24h"
+msgstr "24ч"
+
+#: bot.py:79
+msgid "7d"
+msgstr "7д"
+
+#: bot.py:79
+msgid "30d"
+msgstr "30д"
+
+#: bot.py:79
+msgid "all"
+msgstr "всё"
+
+#: bot.py:97
+msgid "➕ How to connect"
+msgstr "➕ Как подключить"
+
+#: bot.py:112
+msgid "🔴 Turn auto-approve off"
 msgstr "🔴 Выключить автоприём"
 
-#: bot.py:80
-msgid "🟢 Turn auto-approve ON"
+#: bot.py:114
+msgid "🟢 Turn auto-approve on"
 msgstr "🟢 Включить автоприём"
 
-#: bot.py:87
-#, python-brace-format
-msgid "📊 Stats, {days} days"
-msgstr "📊 Статистика, {days} дн."
+#: bot.py:120
+msgid "📊 Stats"
+msgstr "📊 Статистика"
 
-#: bot.py:93 bot.py:199
+#: bot.py:122 bot.py:143 bot.py:304
 msgid "⬅️ Back"
 msgstr "⬅️ Назад"
 
-#: bot.py:138 test_db.py:89 test_db.py:91
-msgid "Requests"
-msgstr "Заявок"
+#: bot.py:139
+msgid "↕ by volume"
+msgstr "↕ по объёму"
 
 #: bot.py:139
-msgid "Approved"
-msgstr "Принято"
+msgid "↕ by retention"
+msgstr "↕ по удержанию"
 
-#: bot.py:140
-msgid "Left"
-msgstr "Отписалось"
+#: bot.py:183
+msgid "Channel not found."
+msgstr "Канал не найден."
 
-#: bot.py:142
-msgid "Premium"
-msgstr "Premium"
+#: bot.py:195
+msgid "no name"
+msgstr "без имени"
 
-#: bot.py:143
-msgid "New accts"
-msgstr "Свежих"
-
-#: bot.py:147
-msgid "By invite link:"
-msgstr "По ссылкам:"
-
-#: bot.py:147
-msgid "  link        req → stay   ret   new"
-msgstr "  ссылка      заяв → оста   ост  новых"
-
-#: bot.py:158
-#, python-brace-format
-msgid "  …and {n} more"
-msgstr "  …и ещё {n}"
-
-#: bot.py:161
-#, python-brace-format
-msgid "📊 {title} · {days} days"
-msgstr "📊 {title} · {days} дн."
-
-#: bot.py:172
+#: bot.py:204
 msgid ""
-"👋 I approve join requests to your private channel automatically.\n"
-"\n"
-"To connect a channel, add me as an administrator with the <b>Add members</b> right. "
-"Only the channel owner can do this."
-msgstr ""
-"👋 Я автоматически принимаю заявки на вступление в твой приватный канал.\n"
-"\n"
-"Чтобы подключить канал, добавь меня администратором с правом <b>Добавление "
-"подписчиков</b>. Сделать это может только владелец канала."
+"⛔ I am not in this channel any more, so new requests are not approved. The stats "
+"below are still yours."
+msgstr "⛔ Меня нет в канале, новые заявки не принимаются. Статистика за прошлое на месте."
 
-#: bot.py:182
+#: bot.py:211
+msgid "No requests yet."
+msgstr "Заявок пока не было."
+
+#: bot.py:212
+#, python-brace-format
+msgid "{days} days · requests {n} · stayed {kept}"
+msgstr "{days} дней · заявок {n} · осталось {kept}"
+
+#: bot.py:221
+#, python-brace-format
+msgid "<b>{title} · {period}</b>"
+msgstr "<b>{title} · {period}</b>"
+
+#: bot.py:229
+msgid "No requests in this period."
+msgstr "За этот период заявок нет."
+
+#: bot.py:232
+msgid ""
+"If you have just switched auto-approve on, that is expected: requests that were "
+"already pending stay invisible to me."
+msgstr ""
+"Если автоприём только включили — так и должно быть: заявки, поданные раньше, я не "
+"вижу."
+
+#: bot.py:238
+#, python-brace-format
+msgid "Requests {n} · stayed {kept}"
+msgstr "Заявок {n} · осталось {kept}"
+
+#: bot.py:242
+#, python-brace-format
+msgid "Premium {premium} · new accounts {fresh}"
+msgstr "Premium {premium} · свежих {fresh}"
+
+#: bot.py:248
+msgid "Auto-approve is off right now."
+msgstr "Автоприём сейчас выключен."
+
+#: bot.py:250
+msgid "            came  kept  new"
+msgstr "            пришло  ост   нов"
+
+#: bot.py:261
+#, python-brace-format
+msgid "…and {n} more"
+msgstr "…и ещё {n}"
+
+#: bot.py:274
+msgid ""
+"👋 I approve join requests to your private channel automatically and show which invite"
+" link brings people who stay.\n"
+"\n"
+"Add me to the channel as an administrator with the <b>Add members</b> right — only "
+"the channel owner can do that."
+msgstr ""
+"👋 Я сам принимаю заявки в твой приватный канал и показываю, какая ссылка приводит "
+"тех, кто остаётся.\n"
+"\n"
+"Добавь меня в канал администратором с правом <b>Добавление подписчиков</b> — это "
+"может сделать только владелец канала."
+
+#: bot.py:286
 msgid "Your channels:"
 msgstr "Твои каналы:"
 
-#: bot.py:190
+#: bot.py:286
+msgid "No channels connected yet."
+msgstr "Подключённых каналов пока нет."
+
+#: bot.py:295
 msgid ""
 "<b>How to connect a channel</b>\n"
 "\n"
 "1. Open your channel → Administrators → Add admin\n"
 "2. Pick me and leave the <b>Add members</b> right enabled\n"
-"3. Come back here — the channel will show up in the list\n"
+"3. I will write to you right away — switch auto-approve on there\n"
 "\n"
 "⚠️ Only the channel <b>owner</b> can connect it. An administrator is not enough.\n"
 "\n"
@@ -111,26 +181,22 @@ msgstr ""
 "\n"
 "1. Открой канал → Администраторы → Добавить администратора\n"
 "2. Выбери меня и оставь включённым право <b>Добавление подписчиков</b>\n"
-"3. Вернись сюда — канал появится в списке\n"
+"3. Я сразу тебе напишу — там и включишь автоприём\n"
 "\n"
 "⚠️ Подключить канал может только его <b>владелец</b>. Администратора недостаточно.\n"
 "\n"
 "⚠️ Заявки, которые уже висят, так и останутся висеть: Telegram не даёт ботам способа "
 "их прочитать. Одобри их один раз руками — всё, что придёт дальше, за мной."
 
-#: bot.py:215 bot.py:229 bot.py:251
-msgid "Channel not found."
-msgstr "Канал не найден."
+#: bot.py:339
+msgid "On. Counting from this second."
+msgstr "Включил. Считаю с этой секунды."
 
-#: bot.py:238
-msgid "Auto-approve is ON. Requests are approved and counted from now."
-msgstr "Автоприём включён. Заявки принимаются и считаются с этой секунды."
+#: bot.py:341
+msgid "Off. New requests will just sit there."
+msgstr "Выключил. Новые заявки остаются висеть."
 
-#: bot.py:240
-msgid "Auto-approve is OFF. New requests are not approved."
-msgstr "Автоприём выключен. Новые заявки не принимаются."
-
-#: bot.py:276
+#: bot.py:379
 #, python-brace-format
 msgid ""
 "⚠️ I lost administrator rights in «{title}» and stopped approving requests. Add me "
@@ -139,7 +205,7 @@ msgstr ""
 "⚠️ Меня лишили прав администратора в «{title}», заявки больше не принимаются. Верни "
 "права администратора, чтобы продолжить."
 
-#: bot.py:295
+#: bot.py:398
 #, python-brace-format
 msgid ""
 "❌ Only the <b>owner</b> of «{title}» can connect it — being an administrator is not "
@@ -148,7 +214,7 @@ msgstr ""
 "❌ Подключить «{title}» может только <b>владелец</b> канала — администратора "
 "недостаточно. Я вышел из канала; попроси владельца добавить меня."
 
-#: bot.py:316
+#: bot.py:419
 #, python-brace-format
 msgid ""
 "⚠️ «{title}» is connected, but I have no <b>Add members</b> right — without it "
@@ -159,16 +225,50 @@ msgstr ""
 "Telegram вообще не присылает мне заявки. Выдай его в настройках администратора "
 "канала."
 
-#: bot.py:331
+#: bot.py:434
 #, python-brace-format
-msgid "✅ «{title}» is connected. Turn auto-approve on:"
+msgid "✅ «{title}» is connected. Switch auto-approve on:"
 msgstr "✅ «{title}» подключён. Включай автоприём:"
 
-#: bot.py:384
+#: bot.py:487
 #, python-brace-format
 msgid "⚠️ I can no longer access «{title}» and stopped approving requests."
 msgstr "⚠️ У меня больше нет доступа к «{title}», заявки не принимаются."
 
+#: test_db.py:105 test_db.py:107
+msgid "Requests"
+msgstr "Заявок"
+
 #~ msgid "Auto-approve is ON. Stats start collecting from now."
 #~ msgstr "Автоприём включён. Статистика начинает копиться с этой минуты."
+
+#~ msgid "➕ Connect a channel"
+#~ msgstr "➕ Подключить канал"
+
+#~ msgid "📊 Stats, {days} days"
+#~ msgstr "📊 Статистика, {days} дн."
+
+#~ msgid "Approved"
+#~ msgstr "Принято"
+
+#~ msgid "Left"
+#~ msgstr "Отписалось"
+
+#~ msgid "Premium"
+#~ msgstr "Premium"
+
+#~ msgid "New accts"
+#~ msgstr "Свежих"
+
+#~ msgid "By invite link:"
+#~ msgstr "По ссылкам:"
+
+#~ msgid "  link        req → stay   ret   new"
+#~ msgstr "  ссылка      заяв → оста   ост  новых"
+
+#~ msgid "📊 {title} · {days} days"
+#~ msgstr "📊 {title} · {days} дн."
+
+#~ msgid "Auto-approve is ON. Requests are approved and counted from now."
+#~ msgstr "Автоприём включён. Заявки принимаются и считаются с этой секунды."
 

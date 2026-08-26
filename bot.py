@@ -36,10 +36,15 @@ import db
 
 router = Router()
 
-STATS_PERIODS = (1, 7, 30)
+# 1 — скользящие сутки, 0 — всё время.
+PERIODS = (1, 7, 30, 0)
+CARD_PERIOD = 7
 
 # Сколько строк отчёта влезает, не упираясь в лимит сообщения Telegram.
 MAX_LINK_ROWS = 10
+
+# Пороги качества связки по доле оставшихся.
+GOOD, FAIR = 80, 50
 
 
 # --- i18n ----------------------------------------------------------------------
@@ -61,36 +66,81 @@ class DBI18nMiddleware(I18nMiddleware):
 
 # --- клавиатуры ----------------------------------------------------------------
 
+def period_name(days: int) -> str:
+    return {
+        1: _("24 hours"),
+        7: _("7 days"),
+        30: _("30 days"),
+        0: _("all time"),
+    }[days]
+
+
+def period_button(days: int) -> str:
+    return {1: _("24h"), 7: _("7d"), 30: _("30d"), 0: _("all")}[days]
+
+
 async def main_menu(owner_id: int) -> InlineKeyboardMarkup:
-    rows = [
-        [
-            InlineKeyboardButton(
-                text=("✅ " if channel["auto_approve"] else "⬜️ ") + (channel["title"] or "?"),
-                callback_data=f"ch:{channel['chat_id']}",
-            )
-        ]
-        for channel in await db.channels_of(owner_id)
-    ]
-    rows.append([InlineKeyboardButton(text=_("➕ Connect a channel"), callback_data="how")])
-    rows.append([InlineKeyboardButton(text="🌐 Русский / English", callback_data="lang")])
+    rows = []
+    for channel in await db.channels_of(owner_id):
+        # ⛔ — бота выгнали. Канал остаётся в списке: отчёт за прошлое живой.
+        mark = "✅" if channel["auto_approve"] else "⬜️"
+        if not channel["active"]:
+            mark = "⛔"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"{mark} {channel['title'] or '?'}",
+                    callback_data=f"ch:{channel['chat_id']}",
+                )
+            ]
+        )
+    rows.append([InlineKeyboardButton(text=_("➕ How to connect"), callback_data="how")])
+    # Подпись кнопки — сам язык, на который переключаемся: «Русский / English»
+    # не говорит, какой сейчас включён.
+    other = "EN" if await db.get_lang(owner_id) != "en" else "RU"
+    rows.append([InlineKeyboardButton(text=other, callback_data="lang")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def channel_menu(chat_id: int, auto_approve: bool) -> InlineKeyboardMarkup:
-    toggle = _("🔴 Turn auto-approve OFF") if auto_approve else _("🟢 Turn auto-approve ON")
+def channel_menu(channel) -> InlineKeyboardMarkup:
+    chat_id = channel["chat_id"]
+    rows = []
+    if channel["active"]:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=_("🔴 Turn auto-approve off")
+                    if channel["auto_approve"]
+                    else _("🟢 Turn auto-approve on"),
+                    callback_data=f"toggle:{chat_id}",
+                )
+            ]
+        )
+    rows.append(
+        [InlineKeyboardButton(text=_("📊 Stats"), callback_data=f"stats:{chat_id}:7:r")]
+    )
+    rows.append([InlineKeyboardButton(text=_("⬅️ Back"), callback_data="menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def report_menu(chat_id: int, days: int, sort: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=toggle, callback_data=f"toggle:{chat_id}")],
-            *[
-                [
-                    InlineKeyboardButton(
-                        text=_("📊 Stats, {days} days").format(days=days),
-                        callback_data=f"stats:{chat_id}:{days}",
-                    )
-                ]
-                for days in STATS_PERIODS
+            [
+                InlineKeyboardButton(
+                    # Точкой помечен открытый период: отдельной строки состояния нет.
+                    text=("· " if period == days else "") + period_button(period),
+                    callback_data=f"stats:{chat_id}:{period}:{sort}",
+                )
+                for period in PERIODS
             ],
-            [InlineKeyboardButton(text=_("⬅️ Back"), callback_data="menu")],
+            [
+                InlineKeyboardButton(
+                    text=_("↕ by volume") if sort == "r" else _("↕ by retention"),
+                    callback_data=f"stats:{chat_id}:{days}:{'v' if sort == 'r' else 'r'}",
+                )
+            ],
+            [InlineKeyboardButton(text=_("⬅️ Back"), callback_data=f"ch:{chat_id}")],
         ]
     )
 
@@ -127,39 +177,91 @@ async def show(call: CallbackQuery, text: str, reply_markup=None) -> None:
         await call.answer()
 
 
-def format_stats(title: str, report: dict) -> str:
+async def owned_channel(call: CallbackQuery, chat_id: int):
+    channel = await db.get_channel(chat_id)
+    if channel is None or channel["owner_id"] != call.from_user.id:
+        await call.answer(_("Channel not found."), show_alert=True)
+        return None
+    return channel
+
+
+def pct(part: int, whole: int) -> str:
+    return f"{round(100 * part / whole)}%" if whole else "—"
+
+
+def link_label(raw: str) -> str:
+    """В отчёт идёт имя связки. Сам инвайт — секрет, ему в переписке не место."""
+    if raw == "?":
+        return _("no name")
+    label = raw.split("t.me/")[-1].lstrip("+")
+    return label if len(label) <= 9 else label[:8] + "…"
+
+
+async def channel_screen(channel) -> str:
+    title = f"<b>{html.escape(channel['title'] or '?')}</b>"
+    if not channel["active"]:
+        return title + "\n\n" + _(
+            "⛔ I am not in this channel any more, so new requests are not approved. "
+            "The stats below are still yours."
+        )
+
+    report = await db.stats(channel["chat_id"], CARD_PERIOD)
+    totals = report["totals"]
+    if not totals["requests"]:
+        return title + "\n\n" + _("No requests yet.")
+    return title + "\n\n" + _("{days} days · requests {n} · stayed {kept}").format(
+        days=CARD_PERIOD,
+        n=totals["requests"],
+        kept=pct(totals["approved"] - totals["gone"], totals["approved"]),
+    )
+
+
+def format_report(title: str, report: dict, auto_approve: bool) -> str:
     totals, links = report["totals"], report["links"]
-    approved = totals["approved"]
+    header = _("<b>{title} · {period}</b>").format(
+        title=html.escape(title), period=period_name(report["days"])
+    )
 
-    def pct(part: int, whole: int) -> str:
-        return f"{round(100 * part / whole)}%" if whole else "—"
-
-    head = [
-        _("Requests").ljust(12) + str(totals["requests"]),
-        _("Approved").ljust(12) + str(approved),
-        _("Left").ljust(12) + f"{totals['gone']}  ({pct(totals['gone'], approved)})",
-        "",
-        _("Premium").ljust(12) + pct(totals["premium"], totals["requests"]),
-        _("New accts").ljust(12) + pct(totals["fresh"], totals["requests"]),
-    ]
-
-    if links:
-        head += ["", _("By invite link:"), _("  link        req → stay   ret   new")]
-        for link in links[:MAX_LINK_ROWS]:
-            stayed = link["joined"] - link["gone"]
-            label = link["label"]
-            label = label if len(label) <= 11 else label[:10] + "…"
-            head.append(
-                f"  {label.ljust(12)}{str(link['joined']).rjust(3)} → "
-                f"{str(stayed).rjust(4)}  {pct(stayed, link['joined']).rjust(4)}  "
-                f"{pct(link['fresh'], link['joined']).rjust(4)}"
+    if not totals["requests"]:
+        return (
+            header
+            + "\n\n"
+            + _("No requests in this period.")
+            + "\n"
+            + _(
+                "If you have just switched auto-approve on, that is expected: "
+                "requests that were already pending stay invisible to me."
             )
-        if len(links) > MAX_LINK_ROWS:
-            head.append(_("  …and {n} more").format(n=len(links) - MAX_LINK_ROWS))
+        )
 
-    body = html.escape("\n".join(head))
-    header = _("📊 {title} · {days} days").format(title=html.escape(title), days=report["days"])
-    return f"<b>{header}</b>\n\n<pre>{body}</pre>"
+    lines = [
+        _("Requests {n} · stayed {kept}").format(
+            n=totals["requests"],
+            kept=pct(totals["approved"] - totals["gone"], totals["approved"]),
+        ),
+        _("Premium {premium} · new accounts {fresh}").format(
+            premium=pct(totals["premium"], totals["requests"]),
+            fresh=pct(totals["fresh"], totals["requests"]),
+        ),
+    ]
+    if not auto_approve:
+        lines.append(_("Auto-approve is off right now."))
+
+    table = [_("            came  kept  new")]
+    for link in links[:MAX_LINK_ROWS]:
+        stayed = link["joined"] - link["gone"]
+        kept = round(100 * stayed / link["joined"]) if link["joined"] else 0
+        mark = "🟢" if kept >= GOOD else "🟡" if kept >= FAIR else "🔴"
+        table.append(
+            f"{mark} {link_label(link['label']).ljust(10)}"
+            f"{str(link['joined']).rjust(4)}  {f'{kept}%'.rjust(4)}"
+            f"  {pct(link['fresh'], link['joined']).rjust(4)}"
+        )
+    if len(links) > MAX_LINK_ROWS:
+        table.append(_("…and {n} more").format(n=len(links) - MAX_LINK_ROWS))
+
+    body = "\n".join(lines) + "\n\n<pre>" + html.escape("\n".join(table)) + "</pre>"
+    return header + "\n\n" + body
 
 
 # --- личка ---------------------------------------------------------------------
@@ -169,9 +271,10 @@ async def cmd_start(message: Message) -> None:
     await db.ensure_user(message.from_user.id, message.from_user.language_code)
     await message.answer(
         _(
-            "👋 I approve join requests to your private channel automatically.\n\n"
-            "To connect a channel, add me as an administrator with the "
-            "<b>Add members</b> right. Only the channel owner can do this."
+            "👋 I approve join requests to your private channel automatically and show "
+            "which invite link brings people who stay.\n\n"
+            "Add me to the channel as an administrator with the <b>Add members</b> "
+            "right — only the channel owner can do that."
         ),
         reply_markup=await main_menu(message.from_user.id),
     )
@@ -179,7 +282,9 @@ async def cmd_start(message: Message) -> None:
 
 @router.callback_query(F.data == "menu")
 async def cb_menu(call: CallbackQuery) -> None:
-    await show(call, _("Your channels:"), await main_menu(call.from_user.id))
+    channels = await db.channels_of(call.from_user.id)
+    text = _("Your channels:") if channels else _("No channels connected yet.")
+    await show(call, text, await main_menu(call.from_user.id))
 
 
 @router.callback_query(F.data == "how")
@@ -190,12 +295,12 @@ async def cb_how(call: CallbackQuery) -> None:
             "<b>How to connect a channel</b>\n\n"
             "1. Open your channel → Administrators → Add admin\n"
             "2. Pick me and leave the <b>Add members</b> right enabled\n"
-            "3. Come back here — the channel will show up in the list\n\n"
+            "3. I will write to you right away — switch auto-approve on there\n\n"
             "⚠️ Only the channel <b>owner</b> can connect it. An administrator is not enough.\n\n"
             "⚠️ Join requests that are already pending stay pending: Telegram gives bots no way "
             "to read them. Approve those once by hand — everything after that is on me."
         ),
-        reply_markup=InlineKeyboardMarkup(
+        InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text=_("⬅️ Back"), callback_data="menu")]]
         ),
     )
@@ -209,53 +314,51 @@ async def cb_lang(call: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("ch:"))
 async def cb_channel(call: CallbackQuery) -> None:
-    chat_id = int(call.data.split(":")[1])
-    channel = await db.get_channel(chat_id)
-    if channel is None or channel["owner_id"] != call.from_user.id:
-        await call.answer(_("Channel not found."), show_alert=True)
+    channel = await owned_channel(call, int(call.data.split(":")[1]))
+    if channel is None:
         return
-    await show(
-        call,
-        f"<b>{html.escape(channel['title'] or '?')}</b>",
-        channel_menu(chat_id, bool(channel["auto_approve"])),
-    )
+    await show(call, await channel_screen(channel), channel_menu(channel))
 
 
 @router.callback_query(F.data.startswith("toggle:"))
 async def cb_toggle(call: CallbackQuery) -> None:
     chat_id = int(call.data.split(":")[1])
-    channel = await db.get_channel(chat_id)
-    if channel is None or channel["owner_id"] != call.from_user.id:
-        await call.answer(_("Channel not found."), show_alert=True)
+    channel = await owned_channel(call, chat_id)
+    if channel is None:
         return
 
     enabled = not channel["auto_approve"]
     await db.set_auto_approve(chat_id, enabled)
-    await call.message.edit_reply_markup(reply_markup=channel_menu(chat_id, enabled))
+    channel = await db.get_channel(chat_id)
+    await call.message.edit_text(
+        await channel_screen(channel), reply_markup=channel_menu(channel)
+    )
+    # Тост без show_alert: тумблер жмут по многу раз в день, модалка «ОК» —
+    # лишний тап на каждое нажатие.
     await call.answer(
-        # Заявки задним числом Telegram не отдаёт, поэтому отчёт наполняется
-        # с этой секунды. Отписки считаются в любом случае, пока канал подключён.
-        _("Auto-approve is ON. Requests are approved and counted from now.")
+        _("On. Counting from this second.")
         if enabled
-        else _("Auto-approve is OFF. New requests are not approved."),
-        show_alert=True,
+        else _("Off. New requests will just sit there.")
     )
 
 
 @router.callback_query(F.data.startswith("stats:"))
 async def cb_stats(call: CallbackQuery) -> None:
-    _prefix, raw_chat_id, raw_days = call.data.split(":")
-    chat_id, days = int(raw_chat_id), int(raw_days)
-    channel = await db.get_channel(chat_id)
-    if channel is None or channel["owner_id"] != call.from_user.id:
-        await call.answer(_("Channel not found."), show_alert=True)
+    # Старый формат stats:<chat>:<days> без сортировки ещё живёт в сообщениях,
+    # которые Telegram показывает пользователю после перезапуска бота.
+    parts = call.data.split(":")
+    chat_id, days = int(parts[1]), int(parts[2])
+    sort = parts[3] if len(parts) > 3 else "r"
+
+    channel = await owned_channel(call, chat_id)
+    if channel is None:
         return
 
-    report = await db.stats(chat_id, days)
+    report = await db.stats(chat_id, days, sort)
     await show(
         call,
-        format_stats(channel["title"] or "?", report),
-        channel_menu(chat_id, bool(channel["auto_approve"])),
+        format_report(channel["title"] or "?", report, bool(channel["auto_approve"])),
+        report_menu(chat_id, days, sort),
     )
 
 
@@ -328,10 +431,10 @@ async def on_my_status(event: ChatMemberUpdated, bot: Bot) -> None:
     await notify(
         bot,
         actor.id,
-        _("✅ «{title}» is connected. Turn auto-approve on:").format(
+        _("✅ «{title}» is connected. Switch auto-approve on:").format(
             title=html.escape(event.chat.title or "?")
         ),
-        reply_markup=channel_menu(event.chat.id, False),
+        reply_markup=channel_menu(await db.get_channel(event.chat.id)),
     )
 
 

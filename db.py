@@ -16,6 +16,9 @@ import config
 
 SCHEMA_VERSION = 1
 
+# Ниже этого числа заявок удержание — шум, а не сигнал.
+MIN_SAMPLE = 10
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     user_id    INTEGER PRIMARY KEY,
@@ -176,8 +179,10 @@ async def get_channel(chat_id: int) -> aiosqlite.Row | None:
 
 
 async def channels_of(owner_id: int) -> list[aiosqlite.Row]:
+    """Отключённые каналы тоже отдаём: статистика за прошлое никуда не делась,
+    а иначе до неё не добраться."""
     async with _db.execute(
-        "SELECT * FROM channels WHERE owner_id = ? AND active = 1 ORDER BY connected_at",
+        "SELECT * FROM channels WHERE owner_id = ? ORDER BY active DESC, connected_at",
         (owner_id,),
     ) as cur:
         return list(await cur.fetchall())
@@ -241,7 +246,7 @@ async def record_leave(chat_id: int, user_id: int) -> None:
 
 # --- отчёт ---------------------------------------------------------------------
 
-async def stats(chat_id: int, days: int) -> dict:
+async def stats(chat_id: int, days: int, sort: str = "r") -> dict:
     """Сводка за период: объёмы, разбивка по инвайт-ссылкам, портрет аудитории.
 
     «Ушёл» считается через EXISTS, а не JOIN: человек мог выходить и возвращаться
@@ -250,7 +255,9 @@ async def stats(chat_id: int, days: int) -> dict:
     Сравнение времени нестрогое: вступление и выход укладываются в одну секунду
     чаще, чем кажется, и при `>` такие отписки терялись бы целиком.
     """
-    since = int(time.time()) - days * 86400
+    # days=0 — за всё время. days=1 — скользящие сутки, а не «с полуночи»:
+    # часового пояса владельца бот не знает.
+    since = int(time.time()) - days * 86400 if days else 0
     fresh_from = datetime.now(timezone.utc).year - 1
 
     async with _db.execute(
@@ -287,10 +294,16 @@ async def stats(chat_id: int, days: int) -> dict:
                   SUM(CASE WHEN acct_year >= ? THEN 1 ELSE 0 END) AS fresh
              FROM j
          GROUP BY label
-         -- Решение «крутить ссылку дальше» принимается по доле оставшихся,
-         -- объём выигрывает накрутка.
-         ORDER BY (joined - gone) * 1.0 / joined DESC, joined DESC""",
-        (chat_id, since, fresh_from),
+         -- По умолчанию — доля оставшихся: решение «крутить связку дальше»
+         -- принимается по ней, объём выигрывает накрутка. Но связка на три
+         -- заявки со «100% удержания» не должна вытеснять рабочую: сначала те,
+         -- по которым вообще есть что считать.
+         -- ponytail: порог значимости — константа. Если связки станут крупнее,
+         -- поднять MIN_SAMPLE, а не изобретать байесовское сглаживание.
+         ORDER BY CASE WHEN ? = 'v' THEN 0 ELSE joined >= ? END DESC,
+                  CASE WHEN ? = 'v' THEN 0 ELSE (joined - gone) * 1.0 / joined END DESC,
+                  joined DESC""",
+        (chat_id, since, fresh_from, sort, MIN_SAMPLE, sort),
     ) as cur:
         links = [dict(row) for row in await cur.fetchall()]
 
